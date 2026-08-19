@@ -5,7 +5,8 @@ use openlogi_core::binding::{KeyboardUsage, ModifierKey, Shortcut};
 
 use super::{
     HELD_KEY_PRESSES, LOCK_SCREEN_CHORD, TYPED_TEXT_KEYS, combo, held_key_event,
-    hid_usage_to_macos, key_event, modifier_virtual_key, text_events, typed_text_key,
+    hid_usage_to_macos, key_event, modifier_event_flag, modifier_virtual_key, text_events,
+    typed_text_key,
 };
 use crate::inject::{HeldKey, HeldModifiers, KeyPhase, parse_shortcut};
 
@@ -23,6 +24,14 @@ fn hid_usages_map_to_macos_virtual_keys() {
 fn right_modifiers_use_side_specific_macos_virtual_keys() {
     assert_eq!(modifier_virtual_key(ModifierKey::RightCommand), 0x36);
     assert_eq!(modifier_virtual_key(ModifierKey::RightOption), 0x3d);
+    assert_eq!(
+        modifier_event_flag(ModifierKey::RightCommand),
+        CGEventFlags::CGEventFlagCommand
+    );
+    assert_eq!(
+        modifier_event_flag(ModifierKey::RightOption),
+        CGEventFlags::CGEventFlagAlternate
+    );
 }
 
 /// Pin a handful of representative `Shortcut -> KeyCombo` rows so an

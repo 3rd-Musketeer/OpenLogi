@@ -433,6 +433,9 @@ fn persisted_action_variant_names_are_stable() {
     ]);
     let mut actual: Vec<String> = actions.into_iter().map(persisted_name).collect();
     actual.sort();
+    // Parameterized actions may contribute more than one catalog entry while
+    // sharing a single stable serde variant name.
+    actual.dedup();
     let mut expected = [
         "AppExpose",
         "BrowserBack",
@@ -525,6 +528,17 @@ fn modifier_tap_uses_an_explicit_human_readable_toml_shape() {
             "ModifierTap".into(),
             toml::Value::String("RightCommand".into()),
         )]))
+    );
+}
+
+#[test]
+fn modifier_taps_are_available_in_the_default_picker_catalog() {
+    let catalog = Action::catalog();
+    assert!(catalog.contains(&Action::ModifierTap(ModifierKey::RightCommand)));
+    assert!(catalog.contains(&Action::ModifierTap(ModifierKey::RightOption)));
+    assert_eq!(
+        Action::ModifierTap(ModifierKey::RightOption).category(),
+        Category::System
     );
 }
 

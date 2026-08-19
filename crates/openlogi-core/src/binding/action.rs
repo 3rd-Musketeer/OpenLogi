@@ -262,6 +262,15 @@ impl ModifierKey {
             Self::RightOption => "Right Option",
         }
     }
+
+    /// Stable localization key for the translated form of [`Self::label`].
+    #[must_use]
+    pub const fn translation_key(self) -> &'static str {
+        match self {
+            Self::RightCommand => "actions.modifier_tap_right_command",
+            Self::RightOption => "actions.modifier_tap_right_option",
+        }
+    }
 }
 
 /// Which of a held chord's keys stay down for the lifetime of the press.
@@ -469,10 +478,9 @@ macro_rules! derive_action_core {
                     | Action::RunShellCommand(_)
                     | Action::Workflow(_)
                     | Action::HoldShortcut(_)
-                    | Action::TapKeyHoldingModifiers(_)
-                    | Action::ModifierTap(_) => Category::Editing,
+                    | Action::TapKeyHoldingModifiers(_) => Category::Editing,
                     Action::SetDpiPreset(_) => Category::Dpi,
-                    Action::OpenApplication(_) => Category::System,
+                    Action::OpenApplication(_) | Action::ModifierTap(_) => Category::System,
                 }
             }
 
@@ -483,10 +491,15 @@ macro_rules! derive_action_core {
             /// tagged `not_pickable` are excluded from the catalog the same way.
             #[must_use]
             pub fn catalog() -> Vec<Action> {
-                [ $( derive_action_core!(@item $variant $( $tag )?) ),* ]
+                let mut actions: Vec<Action> = [ $( derive_action_core!(@item $variant $( $tag )?) ),* ]
                     .into_iter()
                     .flatten()
-                    .collect()
+                    .collect();
+                actions.extend([
+                    Action::ModifierTap(ModifierKey::RightCommand),
+                    Action::ModifierTap(ModifierKey::RightOption),
+                ]);
+                actions
             }
         }
     };

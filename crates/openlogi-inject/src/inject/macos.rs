@@ -13,6 +13,7 @@ use openlogi_core::binding::{
     Action, Effect, KeyCombo, KeyboardUsage, MediaKey, ModifierKey, MouseButton, NativeAction,
     Shortcut,
 };
+use std::time::Duration;
 
 use super::{HeldKey, HeldModifiers, KeyPhase};
 
@@ -119,12 +120,7 @@ pub(super) fn execute(action: &Action) {
         }
         Effect::Shortcut(shortcut) => press_combo(&combo(shortcut)),
         Effect::Key(combo) | Effect::HeldKey(combo) => press_combo(combo),
-        Effect::ModifierTap(modifier) => {
-            post_key(
-                modifier_virtual_key(modifier),
-                CGEventFlags::CGEventFlagNull,
-            );
-        }
+        Effect::ModifierTap(modifier) => post_modifier_tap(modifier),
         Effect::Scroll { dx, dy } => dispatch_scroll(dx, dy),
         // Media/volume controls are NX system-defined keys, not ordinary
         // keyboard virtual-key events. Posting kVK_Volume* through
@@ -149,6 +145,40 @@ const fn modifier_virtual_key(modifier: ModifierKey) -> u16 {
         ModifierKey::RightCommand => 0x36,
         ModifierKey::RightOption => 0x3d,
     }
+}
+
+/// Map a modifier to the flag macOS expects on its key-down event.
+const fn modifier_event_flag(modifier: ModifierKey) -> CGEventFlags {
+    match modifier {
+        ModifierKey::RightCommand => CGEventFlags::CGEventFlagCommand,
+        ModifierKey::RightOption => CGEventFlags::CGEventFlagAlternate,
+    }
+}
+
+/// Press and release one side-specific modifier.
+///
+/// Modifier key-down events need their semantic flag set or macOS may discard
+/// them as an inert virtual-key transition. Keep the key down briefly as well;
+/// back-to-back modifier transitions are routinely coalesced by applications.
+fn post_modifier_tap(modifier: ModifierKey) {
+    let Ok(src) = CGEventSource::new(CGEventSourceStateID::HIDSystemState) else {
+        tracing::warn!("CGEventSource::new failed for modifier tap");
+        return;
+    };
+    let vk = modifier_virtual_key(modifier);
+    let Ok(down) = CGEvent::new_keyboard_event(src.clone(), vk, true) else {
+        tracing::warn!("CGEvent::new_keyboard_event(down) failed for modifier tap");
+        return;
+    };
+    down.set_flags(modifier_event_flag(modifier));
+    down.post(CGEventTapLocation::HID);
+    std::thread::sleep(Duration::from_millis(50));
+    let Ok(up) = CGEvent::new_keyboard_event(src, vk, false) else {
+        tracing::warn!("CGEvent::new_keyboard_event(up) failed for modifier tap");
+        return;
+    };
+    up.set_flags(CGEventFlags::CGEventFlagNull);
+    up.post(CGEventTapLocation::HID);
 }
 
 /// Synthesise a click for `button` at the cursor location. Extra buttons
