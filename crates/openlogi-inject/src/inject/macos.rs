@@ -10,7 +10,8 @@ use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex, PoisonError};
 
 use openlogi_core::binding::{
-    Action, Effect, KeyCombo, KeyboardUsage, MediaKey, MouseButton, NativeAction, Shortcut,
+    Action, Effect, KeyCombo, KeyboardUsage, MediaKey, ModifierKey, MouseButton, NativeAction,
+    Shortcut,
 };
 
 use super::{HeldKey, HeldModifiers, KeyPhase};
@@ -118,6 +119,12 @@ pub(super) fn execute(action: &Action) {
         }
         Effect::Shortcut(shortcut) => press_combo(&combo(shortcut)),
         Effect::Key(combo) | Effect::HeldKey(combo) => press_combo(combo),
+        Effect::ModifierTap(modifier) => {
+            post_key(
+                modifier_virtual_key(modifier),
+                CGEventFlags::CGEventFlagNull,
+            );
+        }
         Effect::Scroll { dx, dy } => dispatch_scroll(dx, dy),
         // Media/volume controls are NX system-defined keys, not ordinary
         // keyboard virtual-key events. Posting kVK_Volume* through
@@ -133,6 +140,14 @@ pub(super) fn execute(action: &Action) {
                 "device action handled by hook/HID layer"
             );
         }
+    }
+}
+
+/// Map a side-specific modifier to its Carbon virtual-key code.
+const fn modifier_virtual_key(modifier: ModifierKey) -> u16 {
+    match modifier {
+        ModifierKey::RightCommand => 0x36,
+        ModifierKey::RightOption => 0x3d,
     }
 }
 

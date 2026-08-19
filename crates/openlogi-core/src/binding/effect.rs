@@ -18,7 +18,7 @@
 //! honest when a variant is added — a backend that forgets a case fails to
 //! compile rather than silently no-op-ing.
 
-use super::action::{Action, WorkflowStep};
+use super::action::{Action, ModifierKey, WorkflowStep};
 use super::key_combo::KeyCombo;
 
 /// What firing an [`Action`] should do, independent of platform.
@@ -48,6 +48,8 @@ pub enum Effect<'a> {
     /// degrade to the same balanced chord tap here, so the split lives in
     /// [`Action::held_chord`] rather than in this IR.
     HeldKey(&'a KeyCombo),
+    /// Press and release one physical-side modifier without an ordinary key.
+    ModifierTap(ModifierKey),
     /// Synthesise one scroll tick. `dx`/`dy` are unit direction (-1/0/1);
     /// each backend applies its own tick magnitude.
     Scroll {
@@ -291,6 +293,7 @@ impl Action {
             Action::HoldShortcut(combo) | Action::TapKeyHoldingModifiers(combo) => {
                 Effect::HeldKey(combo)
             }
+            Action::ModifierTap(modifier) => Effect::ModifierTap(*modifier),
 
             Action::TypeText(text) => Effect::Text(text),
             Action::RunAppleScript(src) => Effect::Script(Script::AppleScript(src)),

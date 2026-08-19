@@ -552,6 +552,10 @@ and turning gestures back on restores the saved directions. The setting is per
 device, not per application: an app profile that gives the button its own
 action replaces the wheel hold in that application.
 
+`ModifierTap` presses and releases a side-specific modifier without an
+ordinary key, for example `GestureButton = { ModifierTap = "RightCommand" }`.
+It currently accepts `RightCommand` and `RightOption`.
+
 An Actions Ring entry wraps the action and may add an icon or literal label:
 
 ```toml

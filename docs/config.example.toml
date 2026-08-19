@@ -75,6 +75,9 @@ DpiToggle = { short = "ShowDesktop", long = "MissionControl" }
 # The thumb wheel's capacitive tap. Inert unless set here; the wheel also
 # reports taps from incidental thumb contact.
 Thumbwheel = "AppExpose"
+# Power-user examples for a standalone, side-specific modifier press:
+# GestureButton = { ModifierTap = "RightCommand" }
+# Back = { ModifierTap = "RightOption" }
 
 [devices."receiver:aabbccdd:slot:1".bindings.GestureButton]
 Click = "MissionControl"

@@ -18,7 +18,8 @@ use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
 use windows_sys::Win32::UI::WindowsAndMessaging::{XBUTTON1, XBUTTON2};
 
 use openlogi_core::binding::{
-    Action, Effect, KeyCombo, KeyboardUsage, MediaKey, MouseButton, NativeAction, Shortcut,
+    Action, Effect, KeyCombo, KeyboardUsage, MediaKey, ModifierKey, MouseButton, NativeAction,
+    Shortcut,
 };
 use openlogi_core::scroll::ScrollDelta;
 
@@ -47,6 +48,8 @@ const VK_CONTROL: u16 = 0x11;
 const VK_MENU: u16 = 0x12;
 const VK_LWIN: u16 = 0x5B;
 const VK_SNAPSHOT: u16 = 0x2C;
+const VK_RWIN: u16 = 0x5C;
+const VK_RMENU: u16 = 0xA5;
 const VK_BROWSER_BACK: u16 = 0xA6;
 const VK_BROWSER_FORWARD: u16 = 0xA7;
 const VK_VOLUME_MUTE: u16 = 0xAD;
@@ -178,6 +181,7 @@ pub(super) fn execute(action: &Action) {
         Effect::Click(button) => post_click(button),
         Effect::Shortcut(shortcut) => press_shortcut(shortcut),
         Effect::Key(combo) | Effect::HeldKey(combo) => press_combo(combo),
+        Effect::ModifierTap(modifier) => post_vk(modifier_virtual_key(modifier), &[]),
         Effect::Scroll { dx, dy } => dispatch_scroll(dx, dy),
         Effect::Media(key) => dispatch_media(key),
         Effect::Native(native) => dispatch_native(native),
@@ -189,6 +193,13 @@ pub(super) fn execute(action: &Action) {
                 "device action handled by hook/HID layer"
             );
         }
+    }
+}
+
+fn modifier_virtual_key(modifier: ModifierKey) -> u16 {
+    match modifier {
+        ModifierKey::RightCommand => VK_RWIN,
+        ModifierKey::RightOption => VK_RMENU,
     }
 }
 

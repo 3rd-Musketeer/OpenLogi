@@ -429,6 +429,7 @@ fn persisted_action_variant_names_are_stable() {
                 .parse()
                 .unwrap_or_else(|error| panic!("valid shortcut failed: {error}")),
         ),
+        Action::ModifierTap(ModifierKey::RightCommand),
     ]);
     let mut actual: Vec<String> = actions.into_iter().map(persisted_name).collect();
     actual.sort();
@@ -452,6 +453,7 @@ fn persisted_action_variant_names_are_stable() {
         "LockScreen",
         "MiddleClick",
         "MissionControl",
+        "ModifierTap",
         "MouseBack",
         "MouseForward",
         "MuteVolume",
@@ -502,6 +504,28 @@ fn persisted_action_variant_names_are_stable() {
 fn custom_shortcut_roundtrips_toml() {
     let action = Action::CustomShortcut("Cmd+Shift+P".parse().expect("valid shortcut failed"));
     assert_eq!(roundtrip(&action), action);
+}
+
+#[test]
+fn modifier_tap_roundtrips_toml_without_an_ordinary_key() {
+    for modifier in [ModifierKey::RightCommand, ModifierKey::RightOption] {
+        let action = Action::ModifierTap(modifier);
+        assert_eq!(roundtrip(&action), action);
+        assert_matches!(action.effect(), Effect::ModifierTap(actual) if actual == modifier);
+    }
+}
+
+#[test]
+fn modifier_tap_uses_an_explicit_human_readable_toml_shape() {
+    let value = toml::Value::try_from(Action::ModifierTap(ModifierKey::RightCommand))
+        .expect("serialize modifier tap");
+    assert_eq!(
+        value,
+        toml::Value::Table(toml::Table::from_iter([(
+            "ModifierTap".into(),
+            toml::Value::String("RightCommand".into()),
+        )]))
+    );
 }
 
 #[test]

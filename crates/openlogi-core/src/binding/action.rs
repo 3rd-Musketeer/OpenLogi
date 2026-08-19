@@ -234,6 +234,34 @@ pub enum Action {
     /// Move the pressing keypad to its next binding page, wrapping from the
     /// last page to page 1. Appended — variant order is wire format.
     NextKeypadPage,
+    /// Press and release one side-specific modifier key without an ordinary
+    /// key. This is distinct from [`Action::CustomShortcut`], whose contract
+    /// is a chord containing exactly one ordinary key. Appended — variant
+    /// order is wire format.
+    ModifierTap(ModifierKey),
+}
+
+/// A side-specific modifier that can be pressed and released on its own.
+///
+/// Variants are append-only because their serde order is persisted in binary
+/// representations of [`Action`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum ModifierKey {
+    /// The right-side Command/Meta key.
+    RightCommand,
+    /// The right-side Option/Alt key.
+    RightOption,
+}
+
+impl ModifierKey {
+    /// User-facing name that preserves the physical side.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::RightCommand => "Right Command",
+            Self::RightOption => "Right Option",
+        }
+    }
 }
 
 /// Which of a held chord's keys stay down for the lifetime of the press.
@@ -389,6 +417,7 @@ macro_rules! derive_action_core {
                         }
                         None => format!("Tap {}", combo.rendered_key()),
                     },
+                    Action::ModifierTap(modifier) => modifier.label().into(),
                 }
             }
 
@@ -409,7 +438,8 @@ macro_rules! derive_action_core {
                     | Action::Workflow(_)
                     | Action::OpenApplication(_)
                     | Action::HoldShortcut(_)
-                    | Action::TapKeyHoldingModifiers(_) => None,
+                    | Action::TapKeyHoldingModifiers(_)
+                    | Action::ModifierTap(_) => None,
                 }
             }
 
@@ -439,7 +469,8 @@ macro_rules! derive_action_core {
                     | Action::RunShellCommand(_)
                     | Action::Workflow(_)
                     | Action::HoldShortcut(_)
-                    | Action::TapKeyHoldingModifiers(_) => Category::Editing,
+                    | Action::TapKeyHoldingModifiers(_)
+                    | Action::ModifierTap(_) => Category::Editing,
                     Action::SetDpiPreset(_) => Category::Dpi,
                     Action::OpenApplication(_) => Category::System,
                 }

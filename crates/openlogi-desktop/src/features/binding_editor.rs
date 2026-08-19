@@ -114,6 +114,7 @@ pub(crate) fn action_icon_path(action: &Action) -> &'static str {
         Action::CustomShortcut(_)
         | Action::HoldShortcut(_)
         | Action::TapKeyHoldingModifiers(_)
+        | Action::ModifierTap(_)
         | Action::TypeText(_) => "action-icons/keyboard.svg",
         Action::RunAppleScript(_) | Action::RunShellCommand(_) => "action-icons/terminal.svg",
     }
